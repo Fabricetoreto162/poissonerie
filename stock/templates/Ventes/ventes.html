@@ -1,0 +1,24 @@
+{% extends 'Base/base.html' %}
+
+{% block title %}Ventes{% endblock %}
+
+{% block content %}
+<h1>Ventes</h1>
+
+<p>Historique des ventes (au kilo et par carton).</p>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>Produit</th>
+        <th>Poids vendu</th>
+        <th>Montant</th>
+        <th>Date</th>
+    </tr>
+    <tr>
+        <td>Saumon</td>
+        <td>1 kg</td>
+        <td>1500 FCFA</td>
+        <td>Aujourd’hui</td>
+    </tr>
+</table>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'Base/base.html' %}
+
+{% block title %}Cartons{% endblock %}
+
+{% block content %}
+<h1>Cartons</h1>
+
+<p>Suivi des cartons par poids.</p>
+
+<table border="1" cellpadding="8">
+    <tr>
+        <th>Produit</th>
+        <th>Poids initial</th>
+        <th>Poids restant</th>
+        <th>Boutique</th>
+    </tr>
+    <tr>
+        <td>Saumon</td>
+        <td>22.5 kg</td>
+        <td>0.3 kg</td>
+        <td>Boutique Centrale</td>
+    </tr>
+</table>
+{% endblock %}
