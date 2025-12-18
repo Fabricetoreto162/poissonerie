@@ -4,23 +4,294 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscription</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            transition: transform 0.3s ease;
+        }
+        
+        .form-container:hover {
+            transform: translateY(-5px);
+        }
+        
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #f8fafc;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #4299e1;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+        
+        .password-container {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #718096;
+            font-size: 18px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toggle-password:hover {
+            color: #4299e1;
+        }
+        
+        .error-messages {
+            background-color: #fed7d7;
+            border: 1px solid #fc8181;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #c53030;
+            font-size: 14px;
+        }
+        
+        .field-errors {
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 6px;
+            display: block;
+        }
+        
+        button[type="submit"] {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button[type="submit"]:hover {
+            background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(49, 130, 206, 0.3);
+        }
+        
+        button[type="submit"]:active {
+            transform: translateY(0);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #e2e8f0;
+            color: #4a5568;
+            font-size: 15px;
+        }
+        
+        .login-link a {
+            color: #4299e1;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+            transition: color 0.2s;
+        }
+        
+        .login-link a:hover {
+            color: #2b6cb0;
+            text-decoration: underline;
+        }
+        
+        .form-footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #718096;
+            text-align: center;
+        }
+        
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 30px 20px;
+            }
+            
+            h2 {
+                font-size: 24px;
+            }
+            
+            input {
+                padding: 12px 14px;
+            }
+        }
+    </style>
+    <!-- Icônes pour les yeux -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    {% if form.errors %}
-        <div style="color:red;">
-            {{ form.errors }}
+    <div class="form-container">
+        <h2>Créer un compte</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="error-messages">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-group">
+                {{ form.password1.label_tag }}
+                <div class="password-container">
+                    {{ form.password1 }}
+                    <button type="button" class="toggle-password" data-target="password1">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+                <span class="field-errors">{{ form.password1.errors }}</span>
+            </div>
+
+            <div class="form-group">
+                {{ form.password2.label_tag }}
+                <div class="password-container">
+                    {{ form.password2 }}
+                    <button type="button" class="toggle-password" data-target="password2">
+                        <i class="far fa-eye"></i>
+                    </button>
+                </div>
+                <span class="field-errors">{{ form.password2.errors }}</span>
+            </div>
+
+            <button type="submit">Créer le compte</button>
+        </form>
+
+        <div class="login-link">
+            Déjà un compte ?
+            <a href="{% url 'connexion' %}">Se connecter</a>
         </div>
-    {% endif %}
+        
+        <div class="form-footer">
+            <p>En vous inscrivant, vous acceptez nos conditions d'utilisation</p>
+        </div>
+    </div>
 
-   <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-
-    <button type="submit">S'inscrire</button>
-</form>
-
-
-   
-
+    <script>
+        // Fonctionnalité pour afficher/masquer les mots de passe
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const passwordField = document.querySelector(`#id_${targetId}`);
+                const icon = this.querySelector('i');
+                
+                if (passwordField.type === 'password') {
+                    passwordField.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordField.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+        
+        // Amélioration des champs pour ajouter des classes CSS
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ajouter une classe aux champs d'email
+            const emailField = document.querySelector('#id_email');
+            if (emailField) {
+                emailField.classList.add('form-input');
+            }
+            
+            // Ajouter une classe aux champs de mot de passe
+            const password1Field = document.querySelector('#id_password1');
+            const password2Field = document.querySelector('#id_password2');
+            
+            if (password1Field) {
+                password1Field.classList.add('form-input');
+                password1Field.setAttribute('autocomplete', 'new-password');
+            }
+            
+            if (password2Field) {
+                password2Field.classList.add('form-input');
+                password2Field.setAttribute('autocomplete', 'new-password');
+            }
+            
+            // Ajouter un effet de focus sur les champs
+            const formInputs = document.querySelectorAll('input');
+            formInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+        });
+    </script>
 </body>
 </html>

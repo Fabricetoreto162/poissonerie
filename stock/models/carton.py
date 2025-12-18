@@ -11,5 +11,5 @@ class Carton(models.Model):
     date_entree = models.DateField(auto_now_add=True)
 
 
-def __str__(self):
- return f"{self.produit} - {self.poids_restant} kg"
+    def __str__(self):
+        return f"{self.produit} - {self.poids_restant} kg"
