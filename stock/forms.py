@@ -89,8 +89,22 @@ class BoutiqueForm(forms.ModelForm):
         model = Boutique
         fields = ["nom"]
         widgets = {
-            "nom": forms.TextInput(attrs={"class": "form-input", "placeholder": "Nom de la boutique"}),
+            "nom": forms.TextInput(attrs={"class": "form-control w-100", "placeholder": "Nom de la boutique"}),
             
+            
+        }
+
+
+
+class CategorieForm(forms.ModelForm):
+    class Meta:
+        model = Categorie
+        fields = ["nom"]
+        widgets = {
+            "nom": forms.TextInput(attrs={
+                "class": "form-control w-100",
+                "placeholder": "Nom de la catégorie"
+            })
         }
 
 
@@ -100,7 +114,7 @@ class ProduitForm(forms.ModelForm):
         fields = ["nom", "categorie", "prix_kg"]
         widgets = {
             "nom": forms.TextInput(attrs={"class": "form-input", "placeholder": "Nom du produit"}),
-            "categorie": forms.Select(attrs={"class": "form-input"}),
+            "categorie": forms.Select(attrs={"class": "form-input","placeholder": "Sélecionner la categories"}),
             "prix_kg": forms.NumberInput(attrs={"class": "form-input", "placeholder": "Prix par kg"}),
         }
 
@@ -202,16 +216,7 @@ class MouvementForm(forms.ModelForm):
 
 
 
-class CategorieForm(forms.ModelForm):
-    class Meta:
-        model = Categorie
-        fields = ["nom"]
-        widgets = {
-            "nom": forms.TextInput(attrs={
-                "class": "form-input",
-                "placeholder": "Nom de la catégorie"
-            })
-        }
+
 
 
 
