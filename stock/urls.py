@@ -17,7 +17,13 @@ urlpatterns = [
     path("produits/update/<int:pk>/", views.produits_update, name="produits_update"),
     path("produits/delete/<int:pk>/", views.produits_delete, name="produits_delete"),
     path('cartons/',views.cartons ,name='cartons'),
-    path('ventes/',views.ventes ,name='ventes'),
+    path("cartons/modifier/<int:pk>/", views.carton_update, name="carton_update"),
+    path("cartons/supprimer/<int:pk>/", views.carton_delete, name="carton_delete"),
+    path("ventes/", views.ventes, name="ventes"),
+    path("ventes/modifier/<int:pk>/", views.vente_update, name="vente_update"),
+    path("ventes/supprimer/<int:pk>/", views.vente_delete, name="vente_delete"),    
+
+
     path('transferts/',views.transferts ,name='transferts'),
     path('mouvements/',views.mouvements ,name='mouvements'),
 

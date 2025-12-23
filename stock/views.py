@@ -1,5 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
+from django.db.models import Count
+from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+from django.contrib import messages
+from datetime import date
+from django.utils.dateparse import parse_date
+
+
 from .forms import InscriptionForm, ConnexionForm
 from django.contrib.auth.decorators import login_required
 from .models import Boutique, Categorie, Produit, Carton, Vente, Transfert, Mouvement
@@ -7,7 +14,8 @@ from .forms import BoutiqueForm
 from .forms import CategorieForm
 from .forms import ProduitForm
 from .forms import CartonForm
-from .forms import VenteForm
+
+from .forms import VenteUpdateForm
 from .forms import TransfertForm
 from .forms import MouvementForm
 
@@ -113,9 +121,14 @@ def boutique_update(request, pk):
 
 @login_required
 def produits(request):
-    categories = Categorie.objects.all()
+    # ✅ Catégories avec nombre de produits
+    categories = (
+        Categorie.objects
+        .annotate(nb_produits=Count("produits"))
+    )
+
     produits = Produit.objects.select_related("categorie")
-    totales_produits= Produit.objects.count()
+    totales_produits = Produit.objects.count()
 
     # Gestion catégorie
     if request.method == "POST" and "add_categorie" in request.POST:
@@ -138,12 +151,13 @@ def produits(request):
         produit_form = ProduitForm()
 
     return render(request, "Produits/produits.html", {
-        "categories": categories,
+        "categories": categories,          # contient maintenant nb_produits
         "produits": produits,
         "categorie_form": categorie_form,
         "produit_form": produit_form,
         "totales_produits": totales_produits
     })
+
 
 
 @login_required
@@ -195,35 +209,142 @@ def categories_delete(request, pk):
 
 
 
+
 @login_required
 def cartons(request):
-    cartons = Carton.objects.all()
+    # ================== AJOUT CARTON ==================
+    if request.method == "POST":
+        form = CartonForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("cartons")
+    else:
+        form = CartonForm()
+
+    # ================== FILTRE PAR DATE ==================
+    selected_date = request.GET.get("date")
+
+    if selected_date:
+        selected_date = parse_date(selected_date)
+        cartons = Carton.objects.filter(date_entree=selected_date)
+    else:
+        cartons = Carton.objects.filter(date_entree=date.today())
+
+    return render(request, "Cartons/cartons.html", {
+        "cartons": cartons,
+        "form": form,
+        "selected_date": selected_date or date.today()
+    })
+
+@login_required
+def carton_update(request, pk):
+    carton = get_object_or_404(Carton, pk=pk)
 
     if request.method == "POST":
-            form =  CartonForm(request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect("produits")
-    else:
-            form = CartonForm()
-    return render(request, 'Cartons/cartons.html', {'cartons': cartons}) 
+        form = CartonForm(request.POST, instance=carton)
+        if form.is_valid():
+            form.save()
+            return redirect("cartons")
 
+
+@login_required
+def carton_delete(request, pk):
+    carton = get_object_or_404(Carton, pk=pk)
+
+    if request.method == "POST":
+        carton.delete()
+        return redirect("cartons")
 
 
 
 
 @login_required
 def ventes(request):
-    ventes = Vente.objects.all()
+    selected_date = request.GET.get("date")
+
+    if selected_date:
+        ventes = Vente.objects.filter(date_vente__date=selected_date)
+    else:
+        selected_date = date.today()
+        ventes = Vente.objects.filter(date_vente__date=selected_date)
+
+    # Totaux du jour
+    total_ventes = ventes.count()
+    total_poids = ventes.aggregate(
+        total=Sum("poids_vendu")
+    )["total"] or 0
+
+    total_montant = ventes.aggregate(
+        total=Sum(
+            F("poids_vendu") * F("prix_unitaire"),
+            output_field=DecimalField()
+        )
+    )["total"] or 0
+
+    # Ajout vente
+    if request.method == "POST":
+        form = VenteUpdateForm(request.POST)
+        if form.is_valid():
+            vente = form.save(commit=False)
+            carton = vente.carton
+
+            if vente.poids_vendu > carton.poids_restant:
+                messages.error(request, "Stock insuffisant")
+            else:
+                carton.poids_restant -= vente.poids_vendu
+                carton.save()
+                vente.save()
+                messages.success(request, "Vente enregistrée")
+                return redirect("ventes")
+    else:
+        form = VenteUpdateForm()
+
+    context = {
+        "form": form,
+        "ventes": ventes,
+        "selected_date": selected_date,
+        "total_ventes": total_ventes,
+        "total_poids": total_poids,
+        "total_montant": total_montant,
+    }
+    return render(request, "Ventes/ventes.html", context)
+
+
+@login_required
+def vente_update(request, pk):
+    vente = get_object_or_404(Vente, pk=pk)
+    ancien_poids = vente.poids_vendu
+    carton = vente.carton
 
     if request.method == "POST":
-            form =  VenteForm(request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect("produits")
-    else:
-            form = VenteForm()
-    return render(request, 'Ventes/ventes.html', {'ventes': ventes})  
+        form = VenteUpdateForm(request.POST, instance=vente)
+        if form.is_valid():
+            nouvelle = form.save(commit=False)
+            diff = nouvelle.poids_vendu - ancien_poids
+
+            if diff > carton.poids_restant:
+                messages.error(request, "Stock insuffisant")
+            else:
+                carton.poids_restant -= diff
+                carton.save()
+                nouvelle.save()
+                messages.success(request, "Vente modifiée")
+    return redirect("ventes")
+
+
+@login_required
+def vente_delete(request, pk):
+    vente = get_object_or_404(Vente, pk=pk)
+    carton = vente.carton
+
+    if request.method == "POST":
+        carton.poids_restant += vente.poids_vendu
+        carton.save()
+        vente.delete()
+        messages.success(request, "Vente supprimée")
+
+    return redirect("ventes")
+
 
 
 

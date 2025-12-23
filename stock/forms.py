@@ -129,27 +129,20 @@ class CartonForm(forms.ModelForm):
         fields = [
             "produit",
             "poids_initial",
-            "poids_restant",
             "boutique",
         ]
         widgets = {
             "produit": forms.Select(attrs={
-                "class": "form-input"
+                "class": "form-control"
             }),
             "poids_initial": forms.NumberInput(attrs={
-                "class": "form-input",
+                "class": "form-control",
                 "placeholder": "Poids initial (kg)",
                 "step": "0.01",
                 "min": "0"
             }),
-            "poids_restant": forms.NumberInput(attrs={
-                "class": "form-input",
-                "placeholder": "Poids restant (kg)",
-                "step": "0.01",
-                "min": "0"
-            }),
             "boutique": forms.Select(attrs={
-                "class": "form-input"
+                "class": "form-control"
             }),
         }
 
@@ -158,20 +151,13 @@ class CartonForm(forms.ModelForm):
 class VenteForm(forms.ModelForm):
     class Meta:
         model = Vente
-        fields = [
-            "produit",
-            "carton",
-            "poids_vendu",
-            "prix_unitaire",
-            "boutique"
-        ]
-        widgets = {
-            "produit": forms.Select(attrs={"class": "form-input"}),
-            "carton": forms.Select(attrs={"class": "form-input"}),
-            "poids_vendu": forms.NumberInput(attrs={"class": "form-input", "placeholder": "Poids vendu (kg)"}),
-            "prix_unitaire": forms.NumberInput(attrs={"class": "form-input", "placeholder": "Prix unitaire"}),
-            "boutique": forms.Select(attrs={"class": "form-input"}),
-        }
+        fields = ["produit", "carton", "poids_vendu", "prix_unitaire", "boutique"]
+        
+class VenteUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Vente
+        fields = ["produit", "carton", "poids_vendu", "prix_unitaire", "boutique"]
+
 
 
 class TransfertForm(forms.ModelForm):
