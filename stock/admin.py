@@ -8,5 +8,5 @@ admin.site.register(Produit)
 admin.site.register(Carton)
 admin.site.register(Vente)
 admin.site.register(Transfert)
-admin.site.register(Mouvement)
+
 

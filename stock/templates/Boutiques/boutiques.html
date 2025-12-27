@@ -497,7 +497,7 @@
             <div>
                 <h3>
                     Statistiques 
-                    <span class="badge badge-count">a Ajouter</span>
+                    <span class="badge badge-count"> Ajouter</span>
                 </h3>
                 <div class="stats-list">
                     <div class="stat-item">
@@ -511,17 +511,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-info">
-                            <div style="font-size: 1.5rem;">💰</div>
-                            <div>
-                                <div class="stat-name">Ventes Moyennes</div>
-                                <div style="font-size: 0.85rem; color: var(--gray-color);">
-                                    {{ avg_sales|default:"1.2M" }} FCFA
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
             
@@ -540,9 +530,15 @@
                             </div>
                         {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="icon icon-add"></span> Ajouter une Boutique
-                    </button>
+
+                    
+                        {% if perms.stock.boutiques %}
+                        <button type="submit" class="btn btn-primary">
+                          <span class="icon icon-add"></span> Ajouter une Boutique
+                        </button>
+
+                         {% endif %}
+                    
                 </form>
             </div>
         </div>

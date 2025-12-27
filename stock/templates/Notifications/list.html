@@ -1,0 +1,493 @@
+
+{% extends 'Base/base.html' %}
+
+
+
+{% block content %}
+
+<div class="notifications-container">
+    
+    <div class="notifications-header">
+        <h2 class="notifications-title">
+            <i class="fas fa-bell icon-title"></i>
+            Notifications
+            {% if notifications %}
+            <span class="notification-count">{{ notifications|length }}</span>
+            {% endif %}
+        </h2>
+        
+        {% if notifications %}
+        <div class="notifications-actions">
+            {% if perms.stock.delete_notification %}
+            <form method="post" action="" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="btn-mark-all-read">
+                    <i class="fas fa-check-double"></i>
+                    Tout marquer comme lu
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="notifications-list">
+        {% for notif in notifications %}
+        <div class="notification-card {% if not notif.lu %}unread{% endif %}" id="notification-{{ notif.id }}">
+            <div class="notification-header">
+                <div class="notification-title-section">
+                    <h3 class="notification-titre">{{ notif.titre }}</h3>
+                    {% if not notif.lu %}
+                    <span class="notification-badge unread-badge">
+                        <i class="fas fa-circle"></i>
+                        Non lue
+                    </span>
+                    {% else %}
+                    <span class="notification-badge read-badge">
+                        <i class="fas fa-check-circle"></i>
+                        Lue
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="notification-date">
+                    <i class="far fa-clock"></i>
+                    {{ notif.date|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+            
+            <div class="notification-body">
+                <p class="notification-message">{{ notif.message }}</p>
+            </div>
+           
+            
+            
+            <div class="notification-footer">
+               
+                
+                {% if perms.stock.delete_notification %}
+                <form method="post"
+                      action="{% url 'notification_delete' notif.id %}"
+                      class="inline-form delete-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-delete">
+                        <i class="fas fa-trash-alt"></i>
+                        Supprimer
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-notifications">
+            <div class="empty-icon">
+                <i class="far fa-bell-slash"></i>
+            </div>
+            <h3 class="empty-title">Aucune notification</h3>
+            <p class="empty-message">Vous n'avez aucune notification pour le moment.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if notifications and notifications|length > 5 %}
+    <div class="notifications-summary">
+        <p>
+            <i class="fas fa-info-circle"></i>
+            Vous avez <strong>{{ notifications|length }}</strong> notification{{ notifications|length|pluralize:"s" }}
+            dont <strong class="unread-count">{{ notifications|dictsortreversed:"lu"|first|default:0 }}</strong> non lue{{ notifications|dictsortreversed:"lu"|first|default:0|pluralize:"s" }}
+        </p>
+    </div>
+    {% endif %}
+
+    
+</div>
+
+<style>
+    /* Variables de couleurs */
+    :root {
+        --primary-color: #4361ee;
+        --secondary-color: #3a0ca3;
+        --success-color: #4cc9f0;
+        --danger-color: #f72585;
+        --warning-color: #ff9e00;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+        --gray-color: #6c757d;
+        --light-gray: #e9ecef;
+        --border-radius: 10px;
+        --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        --transition: all 0.3s ease;
+    }
+
+    /* Conteneur principal */
+    .notifications-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 25px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* En-tête */
+    .notifications-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--light-gray);
+    }
+
+    .notifications-title {
+        color: var(--dark-color);
+        font-size: 1.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 0;
+    }
+
+    .icon-title {
+        color: var(--primary-color);
+        font-size: 1.6rem;
+    }
+
+    .notification-count {
+        background-color: var(--primary-color);
+        color: white;
+        font-size: 0.9rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        margin-left: 10px;
+    }
+
+    .notifications-actions {
+        display: flex;
+        gap: 15px;
+    }
+
+    /* Carte de notification */
+    .notification-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: var(--box-shadow);
+        border-left: 5px solid var(--success-color);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .notification-card.unread {
+        border-left-color: var(--danger-color);
+        background-color: rgba(247, 37, 133, 0.03);
+        animation: pulseUnread 2s infinite;
+    }
+
+    .notification-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Animation pour les notifications non lues */
+    @keyframes pulseUnread {
+        0% { box-shadow: 0 5px 15px rgba(247, 37, 133, 0.1); }
+        50% { box-shadow: 0 5px 20px rgba(247, 37, 133, 0.2); }
+        100% { box-shadow: 0 5px 15px rgba(247, 37, 133, 0.1); }
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .notification-title-section {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .notification-titre {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        margin: 0;
+    }
+
+    .notification-badge {
+        font-size: 0.85rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .unread-badge {
+        background-color: rgba(247, 37, 133, 0.1);
+        color: var(--danger-color);
+    }
+
+    .read-badge {
+        background-color: rgba(76, 201, 240, 0.1);
+        color: var(--success-color);
+    }
+
+    .notification-date {
+        color: var(--gray-color);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Corps de la notification */
+    .notification-body {
+        margin-bottom: 20px;
+    }
+
+    .notification-message {
+        color: var(--dark-color);
+        line-height: 1.6;
+        font-size: 1.05rem;
+        margin: 0;
+        padding: 15px;
+        background-color: var(--light-color);
+        border-radius: 8px;
+        border-left: 3px solid var(--primary-color);
+    }
+
+    /* Pied de notification */
+    .notification-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding-top: 20px;
+        border-top: 1px solid var(--light-gray);
+    }
+
+    /* Formulaires */
+    .inline-form {
+        margin: 0;
+    }
+
+    /* Boutons */
+    .btn-mark-read, .btn-delete, .btn-mark-all-read {
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-mark-read {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-mark-read:hover {
+        background-color: #3ab8d8;
+        transform: translateY(-2px);
+    }
+
+    .btn-delete {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background-color: #d9206d;
+        transform: translateY(-2px);
+    }
+
+    .btn-mark-all-read {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+
+    .btn-mark-all-read:hover {
+        background-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    /* État vide */
+    .empty-notifications {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        margin-top: 30px;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--light-gray);
+        margin-bottom: 20px;
+    }
+
+    .empty-title {
+        color: var(--gray-color);
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+
+    .empty-message {
+        color: var(--gray-color);
+        font-size: 1.1rem;
+        max-width: 500px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    /* Résumé */
+    .notifications-summary {
+        background-color: var(--light-color);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        font-size: 1rem;
+        color: var(--dark-color);
+    }
+
+    .notifications-summary i {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+
+    .unread-count {
+        color: var(--danger-color);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .notifications-container {
+            padding: 15px;
+        }
+        
+        .notifications-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        
+        .notifications-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .notification-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .notification-footer {
+            flex-direction: column;
+        }
+        
+        .btn-mark-read, .btn-delete {
+            width: 100%;
+        }
+        
+        .notification-card {
+            padding: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .notifications-title {
+            font-size: 1.5rem;
+        }
+        
+        .notification-titre {
+            font-size: 1.2rem;
+        }
+        
+        .notification-message {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<script>
+    // Ajouter des interactions JavaScript pour améliorer l'expérience utilisateur
+    document.addEventListener('DOMContentLoaded', function() {
+        // Confirmation avant suppression
+        const deleteForms = document.querySelectorAll('.delete-form');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Marquer une notification comme lue avec effet visuel
+        const markReadForms = document.querySelectorAll('.mark-read-form');
+        markReadForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const notificationCard = this.closest('.notification-card');
+                const badge = notificationCard.querySelector('.notification-badge');
+                
+                // Mettre à jour visuellement
+                notificationCard.classList.remove('unread');
+                notificationCard.style.borderLeftColor = '#4cc9f0';
+                notificationCard.style.animation = 'none';
+                
+                badge.innerHTML = '<i class="fas fa-check-circle"></i> Lue';
+                badge.classList.remove('unread-badge');
+                badge.classList.add('read-badge');
+                
+                // Soumettre le formulaire après l'effet visuel
+                setTimeout(() => {
+                    this.submit();
+                }, 300);
+            });
+        });
+
+        // Effet de lecture pour les notifications non lues au clic
+        const unreadNotifications = document.querySelectorAll('.notification-card.unread');
+        unreadNotifications.forEach(card => {
+            card.addEventListener('click', function(e) {
+                // Ne pas déclencher si on clique sur un bouton
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                    return;
+                }
+                
+                // Marquer visuellement comme lue au clic
+                if (this.classList.contains('unread')) {
+                    this.classList.remove('unread');
+                    this.style.borderLeftColor = '#4cc9f0';
+                    this.style.animation = 'none';
+                    
+                    const badge = this.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Lue';
+                        badge.classList.remove('unread-badge');
+                        badge.classList.add('read-badge');
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

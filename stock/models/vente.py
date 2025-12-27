@@ -5,6 +5,8 @@ from .carton import Carton
 from .boutique import Boutique
 
 
+
+
 class Vente(models.Model):
     produit = models.ForeignKey(
         Produit,
@@ -33,5 +35,9 @@ class Vente(models.Model):
 
     date_vente = models.DateTimeField(auto_now_add=True)
 
+   
+
     def __str__(self):
         return f"Vente {self.produit} - {self.poids_vendu} kg"
+    
+

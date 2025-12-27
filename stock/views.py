@@ -1,15 +1,26 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Count
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
 from django.contrib import messages
 from datetime import date
+from django.contrib.auth.models import Group
 from django.utils.dateparse import parse_date
+from stock.models import Notification
+
+from stock.services.stock_alert import verifier_stock_faible
+from stock.utils.notifications import (
+    notif_ajout,
+    notif_modification,
+    notif_suppression
+)
+from django.db import transaction
 
 
 from .forms import InscriptionForm, ConnexionForm
 from django.contrib.auth.decorators import login_required
-from .models import Boutique, Categorie, Produit, Carton, Vente, Transfert, Mouvement
+from .models import Boutique, Categorie, Produit, Carton, Vente, Transfert ,Notification
 from .forms import BoutiqueForm
 from .forms import CategorieForm
 from .forms import ProduitForm
@@ -17,7 +28,7 @@ from .forms import CartonForm
 
 from .forms import VenteUpdateForm
 from .forms import TransfertForm
-from .forms import MouvementForm
+
 
 
 
@@ -25,13 +36,19 @@ from .forms import MouvementForm
 
 
 def inscription(request):
-    form = InscriptionForm()
-
     if request.method == "POST":
         form = InscriptionForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+
+            # 🔐 Attribution automatique du rôle VENDEUR
+            vendeur_group = Group.objects.get(name="VENDEUR")
+            user.groups.add(vendeur_group)
+
+            user.save()
             return redirect("connexion")
+    else:
+        form = InscriptionForm()
 
     return render(request, "Auth/inscription.html", {
         "form": form
@@ -63,7 +80,7 @@ def index(request):
 
 
 
-
+@permission_required("stock.boutiques", raise_exception=True)
 @login_required
 def boutiques(request):
     boutiques = Boutique.objects.all()
@@ -82,7 +99,7 @@ def boutiques(request):
         "boutiques": boutiques,
         "total_boutiques": total_boutiques
     })
-
+@permission_required("stock.boutique_delete", raise_exception=True)
 @login_required
 def boutique_delete(request, pk):
     boutique = get_object_or_404(Boutique, pk=pk)
@@ -95,7 +112,7 @@ def boutique_delete(request, pk):
         "boutique": boutique
     })
 
-
+@permission_required("stock.boutique_update", raise_exception=True)
 @login_required
 def boutique_update(request, pk):
     boutique = get_object_or_404(Boutique, pk=pk)
@@ -118,7 +135,7 @@ def boutique_update(request, pk):
 
 
 
-
+@permission_required("stock.produits", raise_exception=True)
 @login_required
 def produits(request):
     # ✅ Catégories avec nombre de produits
@@ -159,7 +176,7 @@ def produits(request):
     })
 
 
-
+@permission_required("stock.produits_update", raise_exception=True)
 @login_required
 def produits_update(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
@@ -176,7 +193,7 @@ def produits_update(request, pk):
         "categories": Categorie.objects.all()
     })
 
-
+@permission_required("stock.produits_delete", raise_exception=True)
 @login_required
 def produits_delete(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
@@ -209,14 +226,18 @@ def categories_delete(request, pk):
 
 
 
-
 @login_required
 def cartons(request):
     # ================== AJOUT CARTON ==================
     if request.method == "POST":
         form = CartonForm(request.POST)
         if form.is_valid():
-            form.save()
+            carton = form.save()
+
+            # 🔔 Notifications
+            notif_ajout(carton)
+            verifier_stock_faible(carton.produit, carton.boutique)
+
             return redirect("cartons")
     else:
         form = CartonForm()
@@ -236,6 +257,7 @@ def cartons(request):
         "selected_date": selected_date or date.today()
     })
 
+
 @login_required
 def carton_update(request, pk):
     carton = get_object_or_404(Carton, pk=pk)
@@ -243,19 +265,39 @@ def carton_update(request, pk):
     if request.method == "POST":
         form = CartonForm(request.POST, instance=carton)
         if form.is_valid():
-            form.save()
-            return redirect("cartons")
+            carton = form.save()
 
+            # 🔔 Notifications
+            notif_modification(carton)
+            verifier_stock_faible(carton.produit, carton.boutique)
+
+            return redirect("cartons")
+    else:
+        form = CartonForm(instance=carton)
+
+    return render(request, "Cartons/carton_update.html", {
+        "form": form,
+        "carton": carton
+    })
 
 @login_required
 def carton_delete(request, pk):
-    carton = get_object_or_404(Carton, pk=pk)
-
     if request.method == "POST":
-        carton.delete()
-        return redirect("cartons")
+        carton = Carton.objects.filter(pk=pk).first()
 
+        if carton:
+            produit = carton.produit
+            boutique = carton.boutique
 
+            # 🔔 Notification suppression
+            notif_suppression(carton)
+
+            carton.delete()
+
+            # 🔔 Vérification stock
+            verifier_stock_faible(produit, boutique)
+
+    return redirect("cartons")
 
 
 @login_required
@@ -268,22 +310,15 @@ def ventes(request):
         selected_date = date.today()
         ventes = Vente.objects.filter(date_vente__date=selected_date)
 
-    # Totaux du jour
+ # Totaux du jour
     total_ventes = ventes.count()
-    total_poids = ventes.aggregate(
-        total=Sum("poids_vendu")
-    )["total"] or 0
+    total_poids = ventes.aggregate(total=Sum("poids_vendu"))["total"] or 0
+    total_montant = ventes.aggregate(total=Sum("prix_unitaire"))["total"] or 0
 
-    total_montant = ventes.aggregate(
-        total=Sum(
-            F("poids_vendu") * F("prix_unitaire"),
-            output_field=DecimalField()
-        )
-    )["total"] or 0
-
-    # Ajout vente
+    # ================== AJOUT VENTE ==================
     if request.method == "POST":
         form = VenteUpdateForm(request.POST)
+
         if form.is_valid():
             vente = form.save(commit=False)
             carton = vente.carton
@@ -291,9 +326,15 @@ def ventes(request):
             if vente.poids_vendu > carton.poids_restant:
                 messages.error(request, "Stock insuffisant")
             else:
-                carton.poids_restant -= vente.poids_vendu
-                carton.save()
-                vente.save()
+                with transaction.atomic():
+                    carton.poids_restant -= vente.poids_vendu
+                    carton.save()
+
+                    vente.save()
+
+                    # 🔔 STOCK FAIBLE (BON ENDROIT)
+                    verifier_stock_faible(carton.produit, carton.boutique)
+
                 messages.success(request, "Vente enregistrée")
                 return redirect("ventes")
     else:
@@ -307,6 +348,7 @@ def ventes(request):
         "total_poids": total_poids,
         "total_montant": total_montant,
     }
+
     return render(request, "Ventes/ventes.html", context)
 
 
@@ -332,6 +374,7 @@ def vente_update(request, pk):
     return redirect("ventes")
 
 
+
 @login_required
 def vente_delete(request, pk):
     vente = get_object_or_404(Vente, pk=pk)
@@ -347,35 +390,150 @@ def vente_delete(request, pk):
 
 
 
-
 @login_required
 def transferts(request):
-    transferts = Transfert.objects.all()
+    # 📅 Filtre par date
+    selected_date = request.GET.get("date")
+    selected_date = parse_date(selected_date) if selected_date else date.today()
+
+    transferts = (
+        Transfert.objects
+        .filter(date_transfert__date=selected_date)
+        .select_related(
+            "carton",
+            "boutique_source",
+            "boutique_destination"
+        )
+        .order_by("-date_transfert")
+    )
 
     if request.method == "POST":
-            form =  TransfertForm(request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect("produits")
-    else:
-            form = TransfertForm()
-    return render(request, 'Transferts/transferts.html', {'transferts': transferts})
+        form = TransfertForm(request.POST)
 
+        if form.is_valid():
+            with transaction.atomic():
+
+                transfert = form.save(commit=False)
+                carton = transfert.carton
+
+                boutique_source = carton.boutique
+                boutique_destination = transfert.boutique_destination
+
+                # ❌ Carton déjà entamé
+                if carton.poids_restant < carton.poids_initial:
+                    messages.error(
+                        request,
+                        "❌ Transfert impossible : ce carton est déjà entamé"
+                    )
+                    return redirect("transferts")
+
+                # ❌ Même boutique
+                if boutique_source == boutique_destination:
+                    messages.error(
+                        request,
+                        "❌ La boutique source et la boutique destination sont identiques"
+                    )
+                    return redirect("transferts")
+
+                # 🔁 Mise à jour du transfert
+                transfert.boutique_source = boutique_source
+                transfert.save()
+
+                # 📦 Mise à jour du carton
+                carton.boutique = boutique_destination
+                carton.save()
+
+              
+
+                messages.success(
+                    request,
+                    "✅ Transfert effectué avec succès"
+                )
+                return redirect("transferts")
+
+    else:
+        form = TransfertForm()
+
+        # ✅ Afficher uniquement les cartons NON entamés
+        form.fields["carton"].queryset = Carton.objects.filter(
+            poids_restant=F("poids_initial")
+        ).select_related("produit", "boutique")
+
+    return render(request, "Transferts/transferts.html", {
+        "form": form,
+        "transferts": transferts,
+        "selected_date": selected_date,
+    })
+
+
+@login_required
+def transfert_update(request, pk):
+    transfert = get_object_or_404(Transfert, pk=pk)
+
+    if request.method == "POST":
+        form = TransfertForm(request.POST, instance=transfert)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Transfert modifié avec succès")
+    return redirect("transferts")
+
+
+@login_required
+def transfert_delete(request, pk):
+    transfert = get_object_or_404(Transfert, pk=pk)
+
+    if request.method == "POST":
+        transfert.delete()
+        messages.success(request, "🗑️ Transfert supprimé")
+        return redirect("transferts")
 
 
 
 @login_required
-def mouvements(request):
-    mouvements = Mouvement.objects.all()
+def vente_recu(request, pk):
+    vente = get_object_or_404(Vente, pk=pk)
+
+    return render(request, "Ventes/recu.html", {
+        "vente": vente
+    })
+
+
+
+@login_required
+def notifications(request):
+    notifications = Notification.objects.filter(
+        active=True
+    ).order_by("-date")
+
+    # Marquer comme lues
+    notifications.filter(lu=False).update(lu=True)
+
+    return render(request, "Notifications/list.html", {
+        "notifications": notifications
+    })
+
+
+@login_required
+@permission_required("stock.delete_notification", raise_exception=True)
+def notification_delete(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
 
     if request.method == "POST":
-            form =  MouvementForm(request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect("produits")
-    else:
-            form = MouvementForm()
+        notification.delete()
 
-    return render(request, 'Mouvements/mouvements.html', {'mouvements': mouvements})  
+    return redirect("notifications")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

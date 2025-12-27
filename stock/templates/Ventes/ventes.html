@@ -355,6 +355,11 @@
         color: white;
     }
 
+    .btn-receipt {
+        background: linear-gradient(135deg, var(--success), #27ae60);
+        color: white;
+    }
+
     .btn-action:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -382,6 +387,11 @@
 
     .badge-warning {
         background: linear-gradient(135deg, var(--warning), #e67e22);
+        color: white;
+    }
+
+    .badge-dark {
+        background: linear-gradient(135deg, var(--primary), #1a2530);
         color: white;
     }
 
@@ -466,6 +476,148 @@
         border-radius: 0 0 var(--radius) var(--radius);
     }
 
+    /* STYLE POUR LE MODAL DE REÇU */
+    .modal-receipt {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        width: 90%;
+        max-width: 400px;
+        animation: modalSlideIn 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid var(--success);
+    }
+
+    .modal-receipt::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--success), var(--accent));
+    }
+
+    .receipt-content {
+        padding: 2rem;
+    }
+
+    .receipt-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px dashed #e2e8f0;
+    }
+
+    .receipt-header h2 {
+        color: var(--primary);
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .receipt-header h3 {
+        color: var(--secondary);
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .receipt-details {
+        margin-bottom: 2rem;
+    }
+
+    .receipt-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .receipt-item-label {
+        color: var(--gray);
+        font-weight: 500;
+    }
+
+    .receipt-item-value {
+        color: var(--dark);
+        font-weight: 600;
+    }
+
+    .receipt-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: var(--radius);
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .receipt-total-label {
+        color: var(--primary);
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .receipt-total-value {
+        color: var(--success);
+        font-size: 1.5rem;
+        font-weight: 800;
+    }
+
+    .receipt-footer {
+        text-align: center;
+        padding-top: 1.5rem;
+        border-top: 2px dashed #e2e8f0;
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    .receipt-footer p {
+        margin-bottom: 0.5rem;
+    }
+
+    .receipt-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    /* Styles d'impression pour le reçu */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .modal-receipt,
+        .modal-receipt * {
+            visibility: visible;
+        }
+        
+        .modal-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 100%;
+            box-shadow: none;
+            border: none;
+        }
+        
+        .receipt-actions {
+            display: none !important;
+        }
+    }
+
     /* Animations */
     @keyframes fadeIn {
         from { opacity: 0; }
@@ -517,6 +669,15 @@
             margin: 10px;
             max-height: 90vh;
         }
+        
+        .modal-receipt {
+            width: 95%;
+            margin: 10px;
+        }
+        
+        .receipt-actions {
+            flex-direction: column;
+        }
     }
 
     /* Messages d'erreur */
@@ -561,6 +722,8 @@
 
     .btn-secondary:hover {
         background: #7f8c8d;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(149, 165, 166, 0.2);
     }
 
     .btn-danger {
@@ -739,7 +902,12 @@
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="fas fa-box text-primary"></i>
-                                    <span class="fw-bold">{{ v.produit.nom }}</span>
+                                    <div>
+                                        <div class="fw-bold">{{ v.produit.nom }}</div>
+                                        <small class="badge badge-dark">
+                                            <i class="fas fa-archive"></i> {{ v.carton.poids_initial }} kg
+                                        </small>
+                                    </div>
                                 </div>
                             </td>
                             <td>
@@ -777,8 +945,13 @@
                                         <i class="fas fa-edit"></i>
                                     </button>
 
+                                    <button class="btn-action btn-receipt"
+                                        onclick="openReceiptModal('{{v.date_vente|date:"d/m/Y H:i" }}',' {{ v.produit.nom }} ',' {{ v.poids_vendu }}',' {{ v.prix_unitaire }}',' {{ v.boutique.nom }}')" >
+                                        <i class="fas fa-receipt"></i>
+                                    </button>
+
                                     <button class="btn-action btn-delete"
-                                        onclick="openDeleteModal('{{ v.id }}')">
+                                        onclick="openDeleteModal('{{v.id}}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -801,7 +974,7 @@
     </div>
 </div>
 
-<!-- Modal d'édition - NOUVEAU STYLE CENTRÉ -->
+<!-- Modal d'édition -->
 <div id="editModal" class="modal-backdrop">
     <div class="modal-centered">
         <div class="modal-header">
@@ -872,7 +1045,7 @@
     </div>
 </div>
 
-<!-- Modal de suppression - NOUVEAU STYLE CENTRÉ -->
+<!-- Modal de suppression -->
 <div id="deleteModal" class="modal-backdrop">
     <div class="modal-centered">
         <div class="modal-header">
@@ -901,9 +1074,65 @@
     </div>
 </div>
 
-<script>
-let currentDeleteId = '';
+<!-- Modal de reçu -->
+<div id="receiptModal" class="modal-backdrop">
+    <div class="modal-receipt">
+        <div class="receipt-content">
+            <div class="receipt-header">
+                <h2>
+                    <i class="fas fa-receipt"></i>
+                    REÇU DE VENTE
+                </h2>
+                <h3 id="receiptBoutique"></h3>
+            </div>
+            
+            <div class="receipt-details">
+                <div class="receipt-item">
+                    <span class="receipt-item-label">Date</span>
+                    <span class="receipt-item-value" id="receiptDate"></span>
+                </div>
+                <div class="receipt-item">
+                    <span class="receipt-item-label">Produit</span>
+                    <span class="receipt-item-value" id="receiptProduit"></span>
+                </div>
+                <div class="receipt-item">
+                    <span class="receipt-item-label">Poids vendu</span>
+                    <span class="receipt-item-value" id="receiptPoids"></span>
+                </div>
+                <div class="receipt-item">
+                    <span class="receipt-item-label">Prix / kg</span>
+                    <span class="receipt-item-value" id="receiptPrix"></span>
+                </div>
+            </div>
+            
+           
+            
+            <div class="receipt-footer">
+                <p>Merci pour votre confiance 🙏</p>
+                <p><strong>Gestion de Stock – Poissonnerie</strong></p>
+                <p>Reçu généré le {% now "d/m/Y H:i" %}</p>
+            </div>
+        </div>
+        
+        <div class="receipt-actions">
+            <button type="button" class="btn-secondary" onclick="closeReceiptModal()">
+                <i class="fas fa-times"></i>
+                Fermer
+            </button>
+            <button type="button" class="btn-primary" onclick="printReceipt()">
+                <i class="fas fa-print"></i>
+                Imprimer
+            </button>
+        </div>
+    </div>
+</div>
 
+<script>
+// Variables globales
+let currentDeleteId = '';
+let currentReceiptData = {};
+
+// Fonction pour ouvrir le modal d'édition
 function openEditModal(
     id,
     produitId, produitNom,
@@ -927,16 +1156,18 @@ function openEditModal(
     document.getElementById("edit_poids").value = poids;
     document.getElementById("edit_prix").value = prix;
 
-    // Afficher le modal centré
+    // Afficher le modal
     document.getElementById("editModal").style.display = "flex";
     document.body.style.overflow = "hidden";
 }
 
+// Fonction pour fermer le modal d'édition
 function closeEditModal(){
     document.getElementById("editModal").style.display = "none";
     document.body.style.overflow = "auto";
 }
 
+// Fonction pour ouvrir le modal de suppression
 function openDeleteModal(id){
     currentDeleteId = id;
     document.getElementById("deleteForm").action = "/ventes/supprimer/" + id + "/";
@@ -944,9 +1175,190 @@ function openDeleteModal(id){
     document.body.style.overflow = "hidden";
 }
 
+// Fonction pour fermer le modal de suppression
 function closeDeleteModal(){
     document.getElementById("deleteModal").style.display = "none";
     document.body.style.overflow = "auto";
+}
+
+// Fonction pour ouvrir le modal de reçu
+function openReceiptModal(date, produit, poids, prix, boutique) {
+    // Calculer le total
+    const poidsNum = parseFloat(poids);
+    const prixNum = parseFloat(prix);
+    const total = (poidsNum * prixNum).toFixed(2);
+    
+    // Stocker les données
+    currentReceiptData = { date, produit, poids, prix, boutique, total };
+    
+    // Mettre à jour l'interface
+    document.getElementById("receiptDate").textContent = date;
+    document.getElementById("receiptProduit").textContent = produit;
+    document.getElementById("receiptPoids").textContent = poids + " kg";
+    document.getElementById("receiptPrix").textContent = prix + " FCFA";
+    document.getElementById("receiptBoutique").textContent = boutique;
+    
+    
+    // Afficher le modal
+    document.getElementById("receiptModal").style.display = "flex";
+    document.body.style.overflow = "hidden";
+}
+
+// Fonction pour fermer le modal de reçu
+function closeReceiptModal() {
+    document.getElementById("receiptModal").style.display = "none";
+    document.body.style.overflow = "auto";
+    currentReceiptData = {};
+}
+
+// Fonction pour imprimer le reçu
+function printReceipt() {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Reçu de Vente</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+                body {
+                    font-family: 'Roboto', sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background: white;
+                }
+                .receipt {
+                    max-width: 400px;
+                    margin: 0 auto;
+                    border: 2px solid #27ae60;
+                    border-radius: 10px;
+                    padding: 20px;
+                    background: white;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px dashed #ddd;
+                }
+                .header h2 {
+                    color: #2c3e50;
+                    margin: 0 0 5px 0;
+                    font-size: 24px;
+                }
+                .header h3 {
+                    color: #3498db;
+                    margin: 0;
+                    font-size: 18px;
+                }
+                .details {
+                    margin-bottom: 20px;
+                }
+                .item {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    padding-bottom: 5px;
+                    border-bottom: 1px solid #eee;
+                }
+                .label {
+                    color: #666;
+                    font-weight: 500;
+                }
+                .value {
+                    color: #333;
+                    font-weight: 600;
+                }
+                .total {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    border: 1px solid #ddd;
+                }
+                .total-label {
+                    color: #2c3e50;
+                    font-size: 18px;
+                    font-weight: 700;
+                }
+                .total-value {
+                    color: #27ae60;
+                    font-size: 22px;
+                    font-weight: 800;
+                }
+                .footer {
+                    text-align: center;
+                    padding-top: 15px;
+                    border-top: 2px dashed #ddd;
+                    color: #666;
+                    font-size: 14px;
+                }
+                .footer p {
+                    margin: 5px 0;
+                }
+                @media print {
+                    @page {
+                        margin: 0;
+                        size: auto;
+                    }
+                    body {
+                        padding: 10px;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt">
+                <div class="header">
+                    <h2>🧾 REÇU DE VENTE</h2>
+                    <h3>${currentReceiptData.boutique}</h3>
+                </div>
+                <div class="details">
+                    <div class="item">
+                        <span class="label">Date</span>
+                        <span class="value">${currentReceiptData.date}</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Produit</span>
+                        <span class="value">${currentReceiptData.produit}</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Poids vendu</span>
+                        <span class="value">${currentReceiptData.poids} kg</span>
+                    </div>
+                    <div class="item">
+                        <span class="label">Prix / kg</span>
+                        <span class="value">${currentReceiptData.prix} FCFA</span>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>Merci pour votre confiance 🙏</p>
+                    <p><strong>Gestion de Stock – Poissonnerie</strong></p>
+                    <p>Reçu généré le ${new Date().toLocaleDateString('fr-FR', { 
+                        day: '2-digit', 
+                        month: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</p>
+                </div>
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(function() {
+                        window.close();
+                    }, 500);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
 }
 
 // Fermer les modals en cliquant à l'extérieur
@@ -954,6 +1366,7 @@ document.addEventListener('click', function(event) {
     if (event.target.classList.contains('modal-backdrop')) {
         closeEditModal();
         closeDeleteModal();
+        closeReceiptModal();
     }
 });
 
@@ -962,6 +1375,7 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeEditModal();
         closeDeleteModal();
+        closeReceiptModal();
     }
 });
 
@@ -971,6 +1385,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (datePicker) {
         datePicker.value = '{{ selected_date }}';
     }
+    
+    // Empêcher le comportement par défaut des formulaires dans les modals
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            // Ne pas empêcher la soumission, juste pour le débogage
+            console.log('Form submission:', this.action);
+        });
+    });
 });
 </script>
 {% endblock %}

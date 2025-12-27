@@ -642,11 +642,15 @@
                         {{ field }}
                     </div>
                     {% endfor %}
-                    <button type="submit" name="add_produit" class="btn btn-primary">
-                        <span class="icon icon-add"></span> Ajouter produit
-                    </button>
+                   {% if perms.stock.produit %}
+                            <button type="submit" name="add_produit" class="btn btn-primary">
+                                <span class="icon icon-add"></span> Ajouter produit
+                            </button>
+                    {% endif %}
+
                 </form>
             </div>
+
             
             <div>
                 <h3>
@@ -683,12 +687,14 @@
                                             onclick="openEditProduitModal('{{ produit.id }}', '{{ produit.nom }}', '{{ produit.prix_kg }}', '{{ produit.categorie.id }}')">
                                         <span class="icon icon-edit"></span> Modifier
                                     </button>
+                                     {% if perms.stock.produits_delete %}
                                     <form method="post" action="{% url 'produits_delete' produit.pk %}" style="display:inline;">
                                         {% csrf_token %}
                                         <button type="submit" class="btn-action btn-delete" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?');">
                                             <span class="icon icon-delete"></span> Supprimer
                                         </button>
                                     </form>
+                                     {% endif %}
                                 </div>
                             </td>
                         </tr>

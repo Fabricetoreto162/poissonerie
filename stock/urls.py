@@ -22,10 +22,15 @@ urlpatterns = [
     path("ventes/", views.ventes, name="ventes"),
     path("ventes/modifier/<int:pk>/", views.vente_update, name="vente_update"),
     path("ventes/supprimer/<int:pk>/", views.vente_delete, name="vente_delete"),    
+    path("transferts/", views.transferts, name="transferts"),
+    path("transferts/modifier/<int:pk>/", views.transfert_update, name="transfert_update"),
+    path("transferts/supprimer/<int:pk>/", views.transfert_delete, name="transfert_delete"),
+    path("ventes/recu/<int:pk>/", views.vente_recu, name="vente_recu"),
+    path("notifications/", views.notifications, name="notifications"),
+      # stock/urls.py
+    path("notifications/supprimer/<int:pk>/",views.notification_delete,name="notification_delete"),
 
-
-    path('transferts/',views.transferts ,name='transferts'),
-    path('mouvements/',views.mouvements ,name='mouvements'),
+    
 
 
 

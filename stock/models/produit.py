@@ -12,5 +12,7 @@ class Produit(models.Model):
     )
     prix_kg = models.FloatField()
 
+   
+
     def __str__(self):
         return self.nom

@@ -575,12 +575,7 @@
                     <span>Transferts</span>
                 </a>
             </li>
-            <li class="nav-item {% if 'mouvements' in request.path %}active{% endif %}">
-                <a href="{% url 'mouvements' %}" class="nav-link">
-                    <i class="fas fa-chart-line"></i>
-                    <span>Mouvements</span>
-                </a>
-            </li>
+          
           
         </ul>
     </div>
@@ -600,7 +595,27 @@
                     </button>
                     
                 </div>
-                
+  
+ <!-- div notifications -->
+
+ <a href="{% url 'notifications' %}" class="position-relative">
+    🔔
+    {% if nb_notifications > 0 %}
+        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">
+            {{ nb_notifications }}
+        </span>
+    {% endif %}
+</a>
+
+
+
+
+
+
+
+
+
+
                 <div class="user-info">
                     {% if user.is_authenticated %}
                         <div class="user-avatar">

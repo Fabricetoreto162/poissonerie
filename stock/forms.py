@@ -1,13 +1,13 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from django.db.models import F   
 from django.contrib.auth import authenticate
 from .models.boutique import Boutique
 from .models.produit import Produit
 from .models.carton import Carton
 from .models.vente import Vente
 from .models.transfert import Transfert
-from .models.mouvement import Mouvement
 from .models.categorie import Categorie
 
 
@@ -152,47 +152,33 @@ class VenteForm(forms.ModelForm):
     class Meta:
         model = Vente
         fields = ["produit", "carton", "poids_vendu", "prix_unitaire", "boutique"]
-        
+
 class VenteUpdateForm(forms.ModelForm):
     class Meta:
         model = Vente
         fields = ["produit", "carton", "poids_vendu", "prix_unitaire", "boutique"]
-
+        
 
 
 class TransfertForm(forms.ModelForm):
     class Meta:
         model = Transfert
-        fields = [
-            "carton",
-            "boutique_source",
-            "boutique_destination"
-        ]
-        widgets = {
-            "carton": forms.Select(attrs={"class": "form-input"}),
-            "boutique_source": forms.Select(attrs={"class": "form-input"}),
-            "boutique_destination": forms.Select(attrs={"class": "form-input"}),
+        fields = ["carton", "boutique_destination"]
+        withgets = {
+            "carton": forms.Select(attrs={"class": "form-control"}),
+            "boutique_destination": forms.Select(attrs={"class": "form-control"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # ✅ UNIQUEMENT cartons NON ENTAMÉS
+        self.fields["carton"].queryset = Carton.objects.filter(
+            poids_restant=F("poids_initial")
+        )
 
 
-class MouvementForm(forms.ModelForm):
-    class Meta:
-        model = Mouvement
-        fields = [
-            "type_mouvement",
-            "produit",
-            "carton",
-            "poids",
-            "boutique"
-        ]
-        widgets = {
-            "type_mouvement": forms.Select(attrs={"class": "form-input"}),
-            "produit": forms.Select(attrs={"class": "form-input"}),
-            "carton": forms.Select(attrs={"class": "form-input"}),
-            "poids": forms.NumberInput(attrs={"class": "form-input", "placeholder": "Poids (kg)"}),
-            "boutique": forms.Select(attrs={"class": "form-input"}),
-        }
+
 
 
 
