@@ -1107,10 +1107,7 @@
                 </div>
             </div>
             
-            <div class="receipt-total">
-                <span class="receipt-total-label">TOTAL</span>
-                <span class="receipt-total-value" id="receiptTotal">0 FCFA</span>
-            </div>
+           
             
             <div class="receipt-footer">
                 <p>Merci pour votre confiance 🙏</p>
@@ -1202,7 +1199,7 @@ function openReceiptModal(date, produit, poids, prix, boutique) {
     document.getElementById("receiptPoids").textContent = poids + " kg";
     document.getElementById("receiptPrix").textContent = prix + " FCFA";
     document.getElementById("receiptBoutique").textContent = boutique;
-    document.getElementById("receiptTotal").textContent = total + " FCFA";
+   
     
     // Afficher le modal
     document.getElementById("receiptModal").style.display = "flex";
@@ -1339,10 +1336,7 @@ function printReceipt() {
                         <span class="value">${currentReceiptData.prix} FCFA</span>
                     </div>
                 </div>
-                <div class="total">
-                    <span class="total-label">TOTAL</span>
-                    <span class="total-value">${currentReceiptData.total} FCFA</span>
-                </div>
+               
                 <div class="footer">
                     <p>Merci pour votre confiance 🙏</p>
                     <p><strong>Gestion de Stock – Poissonnerie</strong></p>
