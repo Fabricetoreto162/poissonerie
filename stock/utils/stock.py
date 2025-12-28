@@ -1,29 +1,24 @@
-from stock.models import Carton
-from stock.utils.notifications import creer_notification
+from stock.models import Carton, Notification
 
-def verifier_stock_faible(produit, boutique):
-    nb_cartons = Carton.objects.filter(
+def verifier_stock_faible(produit, boutique=None):
+    cartons_restants = Carton.objects.filter(
         produit=produit,
-        boutique=boutique,
-        actif=True
+        boutique=boutique
     ).count()
 
-    if nb_cartons <= produit.seuil_min_cartons:
-        cartons = Carton.objects.filter(
+    if cartons_restants <= produit.seuil_min_cartons:
+        if not Notification.objects.filter(
             produit=produit,
-            boutique=boutique,
-            actif=True
-        )
-
-        details = ", ".join([
-            f"{produit.nom} {c.poids}kg"
-            for c in cartons
-        ])
-
-        creer_notification(
-            titre="Stock faible",
-            message=f"Il reste {nb_cartons} carton(s) : {details}",
             type_notification="STOCK_FAIBLE",
-            produit=produit,
-            boutique=boutique
-        )
+            active=True
+        ).exists():
+            Notification.objects.create(
+                titre="Stock faible",
+                message=(
+                    f"Stock faible pour {produit.nom} : "
+                    f"{cartons_restants} carton(s) restant(s)"
+                ),
+                type_notification="STOCK_FAIBLE",
+                produit=produit,
+                boutique=boutique
+            )

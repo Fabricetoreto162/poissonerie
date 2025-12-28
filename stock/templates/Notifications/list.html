@@ -56,7 +56,13 @@
             </div>
             
             <div class="notification-body">
-                <p class="notification-message">{{ notif.message }}</p>
+               <p class="notification-message">
+                    {% if notif.type_notification == "STOCK_FAIBLE" %}
+                        <strong>Stock faible :</strong> {{ notif.message }} reste
+                    {% else %}
+                        {{ notif.message }}
+                    {% endif %}
+                </p>
             </div>
            
             

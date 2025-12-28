@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-    /* Variables basées sur votre base.html */
+    /* Variables basées sur votre style unifié */
     :root {
         --primary: #2c3e50;
         --secondary: #3498db;
@@ -132,19 +132,19 @@
     }
 
     .stat-icon.calendar {
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
     }
 
     .stat-icon.receipt {
-        background: linear-gradient(135deg, #1abc9c, #27ae60);
+        background: linear-gradient(135deg, var(--accent), var(--success));
     }
 
     .stat-icon.weight {
-        background: linear-gradient(135deg, #f39c12, #e67e22);
+        background: linear-gradient(135deg, var(--warning), #e67e22);
     }
 
     .stat-icon.money {
-        background: linear-gradient(135deg, #27ae60, #219653);
+        background: linear-gradient(135deg, var(--success), #219653);
     }
 
     .stat-content h3 {
@@ -356,7 +356,7 @@
     }
 
     .btn-receipt {
-        background: linear-gradient(135deg, var(--success), #27ae60);
+        background: linear-gradient(135deg, var(--success), var(--success));
         color: white;
     }
 
@@ -901,7 +901,7 @@
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fas fa-box text-primary"></i>
+                                    <i class="fas fa-box" style="color: var(--primary);"></i>
                                     <div>
                                         <div class="fw-bold">{{ v.produit.nom }}</div>
                                         <small class="badge badge-dark">
@@ -917,14 +917,14 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="fw-bold text-success">{{ v.carton.poids_restant }} kg</span>
+                                <span class="fw-bold" style="color: var(--success);">{{ v.carton.poids_restant }} kg</span>
                             </td>
                             <td>
-                                <span class="fw-bold text-primary">{{ v.prix_unitaire }} FCFA</span>
+                                <span class="fw-bold" style="color: var(--primary);">{{ v.prix_unitaire }} FCFA</span>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fas fa-store text-secondary"></i>
+                                    <i class="fas fa-store" style="color: var(--secondary);"></i>
                                     <span>{{ v.boutique.nom }}</span>
                                 </div>
                             </td>
@@ -1050,13 +1050,15 @@
     <div class="modal-centered">
         <div class="modal-header">
             <h3>
-                <i class="fas fa-exclamation-triangle text-danger"></i>
+                <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
                 Confirmation de suppression
             </h3>
         </div>
         <div class="modal-body">
             <p>Êtes-vous sûr de vouloir supprimer cette vente ?</p>
-            <p class="text-muted">Cette action est irréversible.</p>
+            <p style="color: var(--gray); font-size: 0.9rem; margin-top: 0.5rem;">
+                Cette action est irréversible.
+            </p>
         </div>
         <form method="post" id="deleteForm">
             {% csrf_token %}
@@ -1105,7 +1107,10 @@
                 </div>
             </div>
             
-           
+            <div class="receipt-total">
+                <span class="receipt-total-label">TOTAL</span>
+                <span class="receipt-total-value" id="receiptTotal">0 FCFA</span>
+            </div>
             
             <div class="receipt-footer">
                 <p>Merci pour votre confiance 🙏</p>
@@ -1197,7 +1202,7 @@ function openReceiptModal(date, produit, poids, prix, boutique) {
     document.getElementById("receiptPoids").textContent = poids + " kg";
     document.getElementById("receiptPrix").textContent = prix + " FCFA";
     document.getElementById("receiptBoutique").textContent = boutique;
-    
+    document.getElementById("receiptTotal").textContent = total + " FCFA";
     
     // Afficher le modal
     document.getElementById("receiptModal").style.display = "flex";
@@ -1334,7 +1339,10 @@ function printReceipt() {
                         <span class="value">${currentReceiptData.prix} FCFA</span>
                     </div>
                 </div>
-                
+                <div class="total">
+                    <span class="total-label">TOTAL</span>
+                    <span class="total-value">${currentReceiptData.total} FCFA</span>
+                </div>
                 <div class="footer">
                     <p>Merci pour votre confiance 🙏</p>
                     <p><strong>Gestion de Stock – Poissonnerie</strong></p>

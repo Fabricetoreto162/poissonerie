@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
+from django.utils import timezone
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Count
 from django.db.models import Sum, F, DecimalField, ExpressionWrapper
@@ -9,7 +10,11 @@ from django.contrib.auth.models import Group
 from django.utils.dateparse import parse_date
 from stock.models import Notification
 
-from stock.services.stock_alert import verifier_stock_faible
+
+
+from stock.utils.stock import verifier_stock_faible
+
+
 from stock.utils.notifications import (
     notif_ajout,
     notif_modification,
@@ -75,7 +80,96 @@ def deconnexion(request):
 
 @login_required
 def index(request):
-    return render(request, 'Dashboard/index.html')
+    # =========================
+    # 📅 Date sélectionnée
+    # =========================
+    selected_date = request.GET.get("date")
+
+    if selected_date:
+        selected_date = timezone.datetime.strptime(
+            selected_date, "%Y-%m-%d"
+        ).date()
+    else:
+        selected_date = date.today()
+
+    # =========================
+    # 🧾 PRODUITS
+    # =========================
+    total_produits = Produit.objects.count()
+
+    cartons_par_produit = []
+    stocks_faibles = []
+
+    for produit in Produit.objects.all():
+        nb_cartons = Carton.objects.filter(produit=produit).count()
+
+        cartons_par_produit.append({
+            "nom": produit.nom,
+            "nb_cartons": nb_cartons
+        })
+
+        # ⚠️ Stock faible
+        if nb_cartons <= produit.seuil_min_cartons:
+            stocks_faibles.append({
+                "nom": produit.nom,
+                "nb_cartons": nb_cartons,
+                "seuil": produit.seuil_min_cartons
+            })
+
+    # =========================
+    # 💰 VENTES DU JOUR
+    # =========================
+    ventes_jour_qs = Vente.objects.filter(
+        date_vente__date=selected_date
+    )
+
+    total_ventes = ventes_jour_qs.count()
+
+    montant_jour = ventes_jour_qs.aggregate(
+        total=Sum("prix_unitaire")
+    )["total"] or 0
+
+    # =========================
+    # 📅 CHIFFRE D’AFFAIRES DU MOIS
+    # =========================
+    debut_mois = selected_date.replace(day=1)
+
+    chiffre_affaire_mois = Vente.objects.filter(
+        date_vente__date__gte=debut_mois,
+        date_vente__date__lte=selected_date
+    ).aggregate(
+        total=Sum("prix_unitaire")
+    )["total"] or 0
+
+    # =========================
+    # 🚚 TRANSFERTS DU JOUR
+    # =========================
+    transferts_jour = Transfert.objects.filter(
+        date_transfert__date=selected_date
+    )
+
+    nb_produits_transferes = transferts_jour.count()
+
+    # =========================
+    # CONTEXT
+    # =========================
+    context = {
+        "selected_date": selected_date,
+
+        "total_produits": total_produits,
+        "cartons_par_produit": cartons_par_produit,
+
+        "stocks_faibles": stocks_faibles,
+        "nb_stocks_faibles": len(stocks_faibles),
+
+        "montant_jour": montant_jour,
+        "total_ventes": total_ventes,
+
+        "chiffre_affaire_mois": chiffre_affaire_mois,
+        "nb_produits_transferes": nb_produits_transferes,
+    }
+
+    return render(request, "Dashboard/index.html", context)
 
 
 
@@ -266,10 +360,12 @@ def carton_update(request, pk):
         form = CartonForm(request.POST, instance=carton)
         if form.is_valid():
             carton = form.save()
+            instance = form.save()
+            verifier_stock_faible(instance.produit, instance.boutique)
 
             # 🔔 Notifications
             notif_modification(carton)
-            verifier_stock_faible(carton.produit, carton.boutique)
+
 
             return redirect("cartons")
     else:

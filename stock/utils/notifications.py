@@ -1,50 +1,52 @@
-from stock.models import Notification
-
-def creer_notification(
-    titre,
-    message,
-    type_notification,
-    produit=None,
-    boutique=None
-):
-    Notification.objects.create(
-        titre=titre,
-        message=message,
-        type_notification=type_notification,
-        produit=produit,
-        boutique=boutique
-    )
+from django.utils import timezone
+from stock.models import Notification, Carton
 
 
-
-
-
+# ==============================
+# 🔔 NOTIFICATION CARTON
+# ==============================
 
 def notif_ajout(carton):
     Notification.objects.create(
-        titre="Ajout de carton",
-        message=f"Un nouveau carton de {carton.produit.nom} a été ajouté.",
+        titre="Nouveau carton ajouté",
+        message=f"{carton.produit.nom} ({carton.poids_initial} kg)",
         type_notification="AJOUT",
         produit=carton.produit,
-        boutique=carton.boutique
+        boutique=carton.boutique,
+        date=timezone.now()
     )
 
 
 def notif_modification(carton):
     Notification.objects.create(
-        titre="Modification de carton",
-        message=f"Le carton de {carton.produit.nom} a été modifié.",
+        titre="Carton modifié",
+        message=f"{carton.produit.nom} mis à jour",
         type_notification="MODIFICATION",
         produit=carton.produit,
-        boutique=carton.boutique
+        boutique=carton.boutique,
+        date=timezone.now()
     )
 
 
 def notif_suppression(carton):
     Notification.objects.create(
-        titre="Suppression de carton",
-        message=f"Le carton de {carton.produit.nom} a été supprimé.",
+        titre="Carton supprimé",
+        message=f"{carton.produit.nom} supprimé",
         type_notification="SUPPRESSION",
         produit=carton.produit,
-        boutique=carton.boutique
+        boutique=carton.boutique,
+        date=timezone.now()
+    )
+
+def notif_vente_suppression(vente):
+    Notification.objects.create(
+        titre="Vente supprimée",
+        message=(
+            f"Vente de {vente.poids_vendu} kg de "
+            f"{vente.carton.produit.nom} supprimée"
+        ),
+        type_notification="SUPPRESSION",
+        produit=vente.carton.produit,
+        boutique=vente.carton.boutique,
+        date=timezone.now()
     )
