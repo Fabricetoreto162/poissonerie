@@ -623,7 +623,16 @@
                         </div>
                         <div class="user-details">
                             <div class="user-name">{{ user.username }}</div>
-                            <div class="user-role">Administrateur</div>
+                            <div class="user-role"><span class="user-role">
+                                {% if user.is_superuser %}
+                                    Administrateur
+                                {% elif user.groups.first.name == "VENDEUR" %}
+                                    Vendeur
+                                {% else %}
+                                    Utilisateur
+                                {% endif %}
+                            </span>
+                            </div>
                         </div>
                         <a href="{% url 'deconnexion' %}" class="logout-btn">
                             <i class="fas fa-sign-out-alt"></i>
